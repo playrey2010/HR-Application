@@ -1,5 +1,6 @@
 <!DOCTYPE html>
-<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<html lang="en" xmlns:th="http://www.thymeleaf.org"
+      xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
 <head>
     <meta charset="UTF-8">
     <!-- Bootstrap CSS -->
@@ -15,7 +16,20 @@
 <form th:action="@{/logout}" method="post">
     <input type="submit" value="Logout">
 </form>
-
+<h2>All departments</h2>
+<div th:each="department: ${departments}">
+    Department name: [[${department.name}]]
+    <div th:unless="${department.employees.isEmpty()}" sec:authorize="isAuthenticated()">
+        <h3>List of employees</h3>
+        <div class="employee-list" th:each="employee: ${department.employees}">
+            <p>[[${employee.firstName}]] [[${employee.lastName}]]
+                <a th:href="@{/viewEmployee/{id}(id=${employee.id})}">View</a>
+                <a sec:authorize="hasRole('ADMIN')" th:href="@{/updateEmployee/{id}(id=${employee.id})}">Update</a>
+            </p>
+            <p>[[${employee.email}]]</p>
+        </div>
+    </div>
+</div>
 <!-- jQuery first, then Popper.js, then Bootstrap JS -->
 <script src="https://code.jquery.com/jquery-3.3.1.slim.min.js"
         integrity="sha384-q8i/X+965DzO0rT7abK41JStQIAqVgRVzpbzo5smXKp4YfRvH+8abtTE1Pi6jizo"

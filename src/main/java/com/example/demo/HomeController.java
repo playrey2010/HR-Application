@@ -4,16 +4,18 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.validation.BindingResult;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.ModelAttribute;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.*;
 
 import javax.validation.Valid;
 import java.security.Principal;
+import java.util.ArrayList;
 
 @Controller
 public class HomeController {
+    ArrayList<Department> departments = new ArrayList<>();
+    ArrayList<Employee> employees = new ArrayList<>();
+    boolean preloaded = false;
+
 
     @Autowired
     UserRepository userRepository;
@@ -22,9 +24,49 @@ public class HomeController {
     RoleRepository roleRepository;
 
     @RequestMapping("/")
-    public String index(){
+    public String index(Model model){
+        if (!preloaded){
+            preloaded = true;
+
+            User user1 = new User("super", "super@man.com", "password", "Super", "Man", true);
+            userRepository.save(user1);
+            Employee employee1 = new Employee(user1);
+
+
+            Department itDpt = new Department();
+            itDpt.setName("IT");
+            employee1.setDepartment(itDpt);
+            itDpt.addEmployee(employee1);
+
+            departments.add(itDpt);
+        }
+        model.addAttribute("departments", departments);
+
         return "index";
     }
+
+    @RequestMapping("/viewEmployee/{id}")
+    public String viewEmployee(@PathVariable long id, Model model){
+        Employee employee = null;
+        for (Department department: departments){
+            if (department.hasEmployeeById(id)){
+                employee = department.findEmployeeById(id);
+                break;
+            }
+        }
+        model.addAttribute("employee", employee);
+        return "viewEmployee";
+    }
+
+    @GetMapping("/addEmployee")
+    public String addEmployee(Model model){
+        model.addAttribute("employee", new Employee());
+        model.addAttribute("departments", departments);
+        return "employeeForm";
+    }
+
+
+
 
     @RequestMapping("/login")
     public String login(){
@@ -69,10 +111,34 @@ public class HomeController {
             user.setEnabled(true);
             userRepository.save(user);
 
+
             Role role = new Role(user.getUsername(), "ROLE_USER");
             roleRepository.save(role);
+
+
+            if (!employeeExists(departments, user)){
+                Employee employee = new Employee(user);
+
+            }
+
+
+
+            model.addAttribute("departments", departments);
+            model.addAttribute("employees", employees);
         }
         return "index";
+    }
+
+    static boolean employeeExists(ArrayList<Department> departments, User user){
+        long employeeId = user.getId();
+        boolean answer = false;
+        for (Department department: departments){
+            if (department.hasEmployeeById(employeeId)){
+                answer = true;
+                break;
+            }
+        }
+        return answer;
     }
 
 }
